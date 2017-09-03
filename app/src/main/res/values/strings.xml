@@ -1,4 +1,19 @@
 <resources>
     <string name="app_name">MAP_TRIAL</string>
     <string name="title_activity_maps">Map</string>
+    <string name="input_password">ENTER yYOUR PASSWORD</string>
+    <string name="auth_failed">AUTHENTICATION FAILED</string>
+    <string name="Login">Login</string>
+    <string name="No_account_warning" >No account yet? Create one</string>
+    <string name="Email" >Email</string>
+    <string name="Password" >Password</string>
+    <string name="status" >LOADING</string>
+    <string name="detail">DETAILS WILL BE ADDED LATER.</string>
+    <string name="finally_it_fucking_appeared">FINALLY IT FUCKING APPEARED.</string>
+    <string name="Bus1">BUS1</string>
+    <string name="Bus2">BUS2</string>
+    <string name="Bus3">BUS3</string>
+    <string name="Bus4">BUS4</string>
+    <string name="Bus5">BUS5</string>
+    <string name="pick_me">PICK ME</string>
 </resources>
