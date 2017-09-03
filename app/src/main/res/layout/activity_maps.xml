@@ -3,9 +3,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_weight="1">
 
     <RadioGroup xmlns:android="http://schemas.android.com/apk/res/android"
-        android:layout_width="fill_parent"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal|end"
         android:orientation="horizontal">
@@ -50,25 +55,38 @@
             android:onClick="onRadioButtonClicked"
             android:text="@string/Bus5" />
     </RadioGroup>
+    </LinearLayout>
 
-    <fragment xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:map="http://schemas.android.com/apk/res-auto"
-        xmlns:tools="http://schemas.android.com/tools"
-        android:id="@+id/map"
-        android:name="com.google.android.gms.maps.SupportMapFragment"
-        android:layout_width="match_parent"
-        android:layout_height="431dp"
-        tools:context="com.iam725.kunal.map_trial.MapsActivity" />
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="vertical"
+        android:layout_weight="8">
+
+        <fragment xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:map="http://schemas.android.com/apk/res-auto"
+            xmlns:tools="http://schemas.android.com/tools"
+            android:id="@+id/map"
+            android:name="com.google.android.gms.maps.SupportMapFragment"
+            android:layout_width="match_parent"
+            android:layout_height="402dp"
+            tools:context="com.iam725.kunal.map_trial.MapsActivity" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal|end"
+        android:orientation="vertical"
+        android:layout_weight="1">
 
         <Button
             android:id="@+id/pick_me"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal|end"
+            android:layout_height="60dp"
+            android:layout_marginBottom="0dp"
+            android:layout_gravity="center_vertical|center_horizontal"
             android:onClick="pickMe"
             android:text="@string/pick_me" />
     </LinearLayout>

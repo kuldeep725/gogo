@@ -15,9 +15,10 @@ import android.widget.RadioButton;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.PendingResult;
-import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -25,10 +26,9 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-
-import static com.google.android.gms.location.LocationServices.FusedLocationApi;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, LocationListener,
         GoogleApiClient.ConnectionCallbacks,
@@ -37,11 +37,25 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private static final String TAG = "LocationActivity";
     private static final long INTERVAL = 1000 * 10;             //time in milliseconds
     private static final long FASTEST_INTERVAL = 1000 * 5;
+    private static final String REQUESTING_LOCATION_UPDATES_KEY = "requesting-location-updates";
+    //private final String USER = "user";
+    private final String LATITUDE = "latitude";
+    private final String LONGITUDE = "longitude";
+    private final String VEHICLE = "vehicle";
+    private int checkBusSelection = 0;
+
     protected GoogleMap mMap;
     protected DatabaseReference mDatabase;
     LocationRequest mLocationRequest;
     GoogleApiClient mGoogleApiClient;
     Location mCurrentLocation;
+    private FusedLocationProviderClient mFusedLocationClient;
+    private LocationCallback mLocationCallback;
+    private Boolean mRequestingLocationUpdates;
+
+
+
+
 
     protected void createLocationRequest() {
         mLocationRequest = new LocationRequest();
@@ -59,6 +73,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
+        mRequestingLocationUpdates = false;
+
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+
         Log.d(TAG, "onCreate ...............................");
 
         createLocationRequest();
@@ -73,6 +91,77 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .build();
+
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        mFusedLocationClient.getLastLocation()
+                .addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        // Got last known location. In some rare situations this can be null.
+                        if (location != null) {
+                            mCurrentLocation = location;
+                        }
+                    }});
+
+        if (null != mCurrentLocation) {
+            String lat = String.valueOf(mCurrentLocation.getLatitude());
+            String lng = String.valueOf(mCurrentLocation.getLongitude());
+            mDatabase = FirebaseDatabase.getInstance().getReference();
+            if (checkBusSelection != 0) {
+                String BUS = "b" + checkBusSelection;
+                DatabaseReference userDatabase = mDatabase.child(VEHICLE).child(BUS);
+                userDatabase.child(LATITUDE).setValue(lat);
+                userDatabase.child(LONGITUDE).setValue(lng);
+
+            }
+            mMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude()))
+                    .title("Marker in Sydney"));
+            mMap.animateCamera(CameraUpdateFactory.newLatLng(
+                    new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude())));
+
+
+        } else {
+            Log.d(TAG, "location is null ...............");
+        }
+
+        mLocationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                for (Location location : locationResult.getLocations()) {
+                    // Update UI with location data
+                    // ...
+                    mCurrentLocation = location;
+                    if (null != mCurrentLocation) {
+                        String lat = String.valueOf(mCurrentLocation.getLatitude());
+                        String lng = String.valueOf(mCurrentLocation.getLongitude());
+                        mDatabase = FirebaseDatabase.getInstance().getReference();
+
+                        if (checkBusSelection != 0) {
+
+                            String BUS = "b" + checkBusSelection;
+                            DatabaseReference userDatabase = mDatabase.child(VEHICLE).child(BUS);
+                            userDatabase.child(LATITUDE).setValue(lat);
+                            userDatabase.child(LONGITUDE).setValue(lng);
+
+                        }
+
+                    } else {
+                        Log.d(TAG, "location is null ...............");
+                    }
+                }
+            }
+        };
+
 
     }
 
@@ -93,7 +182,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // Add a marker in Sydney and move the camera
         LatLng sydney = new LatLng(-34, 151);
         mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+        //mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
@@ -131,40 +220,91 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // Check which radio button was clicked
         switch (view.getId()) {
             case R.id.bus1:
-                if (checked)
+                if (checked) {
+                    checkBusSelection = 1;
                     break;
+                }
             case R.id.bus2:
-                if (checked)
+                if (checked) {
+                    checkBusSelection = 2;
                     break;
+                }
             case R.id.bus3:
-                if (checked)
+                if (checked) {
+                    checkBusSelection = 3;
                     break;
+                }
             case R.id.bus4:
-                if (checked)
+                if (checked) {
+                    checkBusSelection = 4;
                     break;
+                }
             case R.id.bus5:
-                if (checked)
+                if (checked) {
+                    checkBusSelection = 5;
                     break;
+                }
         }
     }
 
     public void pickMe(View view) {
 
-        Bundle extras = getIntent().getExtras();
+        /*Bundle extras = getIntent().getExtras();
         String userId = extras.getString("email");
         assert userId != null;
         String[] temp = userId.split("@");
-        userId = temp[0];
+        userId = temp[0];*/
 
-        mDatabase = FirebaseDatabase.getInstance().getReference();
-        FirebaseDatabase userDatabase = mDatabase.child("user").child(userId).
+        if (null != mCurrentLocation) {
+            String lat = String.valueOf(mCurrentLocation.getLatitude());
+            String lng = String.valueOf(mCurrentLocation.getLongitude());
+            mDatabase = FirebaseDatabase.getInstance().getReference();
+            if (checkBusSelection != 0) {
+                String BUS = "b" + checkBusSelection;
+                DatabaseReference userDatabase = mDatabase.child(VEHICLE).child(BUS);
+                userDatabase.child(LATITUDE).setValue(lat);
+                userDatabase.child(LONGITUDE).setValue(lng);
 
+            }
+
+        } else {
+            Log.d(TAG, "location is null ...............");
+        }
+
+    }
+
+    protected void startLocationUpdates() {
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        /*PendingResult<Status> pendingResult = FusedLocationApi.requestLocationUpdates(
+                mGoogleApiClient, mLocationRequest, (com.google.android.gms.location.LocationListener) this);*/
+        Log.d(TAG, "Location update started ..............: ");
+        mFusedLocationClient.requestLocationUpdates(mLocationRequest,
+                mLocationCallback,
+                null /* Looper */);
     }
 
     @Override
     public void onLocationChanged(Location location) {
         Log.d(TAG, "Firing onLocationChanged..............................................");
-        mCurrentLocation = location;
+        mLocationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult (LocationResult locationResult) {
+                for (Location location : locationResult.getLocations()) {
+                    // Update UI with location data
+                    // ...
+                    mCurrentLocation = location;
+                }
+            }
+        };
     }
 
     @Override
@@ -181,6 +321,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mGoogleApiClient.disconnect();
         Log.d(TAG, "isConnected ...............: " + mGoogleApiClient.isConnected());
     }
+
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
 
@@ -199,6 +340,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         Log.d(TAG, "onConnected - isConnected ...............: " + mGoogleApiClient.isConnected());
+
         startLocationUpdates();
     }
 
@@ -228,34 +370,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         stopLocationUpdates();
     }
 
-    protected void startLocationUpdates() {
-        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
-        PendingResult<Status> pendingResult = FusedLocationApi.requestLocationUpdates(
-                mGoogleApiClient, mLocationRequest, (com.google.android.gms.location.LocationListener) this);
-        Log.d(TAG, "Location update started ..............: ");
-    }
 
     protected void stopLocationUpdates() {
-        FusedLocationApi.removeLocationUpdates(
-                mGoogleApiClient, (com.google.android.gms.location.LocationListener) this);
+        mFusedLocationClient.removeLocationUpdates(mLocationCallback);
         Log.d(TAG, "Location update stopped .......................");
     }
 
     @Override
-    public void onResume() {
+    protected void onResume() {
         super.onResume();
-        if (mGoogleApiClient.isConnected()) {
+        if (mRequestingLocationUpdates) {
             startLocationUpdates();
-            Log.d(TAG, "Location update resumed .....................");
         }
+    }
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putBoolean(REQUESTING_LOCATION_UPDATES_KEY,
+                mRequestingLocationUpdates);
+        // ...
+        super.onSaveInstanceState(outState);
     }
 }
