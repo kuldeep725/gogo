@@ -24,6 +24,7 @@ public class Login extends AppCompatActivity {
     private FirebaseAuth mAuth;
     private EditText emailEditText;
     private EditText passwordEditText;
+    static String email;
     //private TextView mStatusTextView;
     //private TextView mDetailTextView;
 
@@ -63,7 +64,7 @@ public class Login extends AppCompatActivity {
 
     private void signIn() {
 
-        final String email = emailEditText.getText().toString();
+        email = emailEditText.getText().toString();
         final String password = passwordEditText.getText().toString();
 
         Log.d(TAG, "signIn:" + email);

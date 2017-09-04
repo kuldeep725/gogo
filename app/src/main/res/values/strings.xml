@@ -16,4 +16,6 @@
     <string name="Bus4">BUS4</string>
     <string name="Bus5">BUS5</string>
     <string name="pick_me">PICK ME</string>
+    <string name="distance">Distance : 0Km</string>
+    <string name="time">Time : 0s</string>
 </resources>

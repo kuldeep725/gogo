@@ -3,14 +3,17 @@ package com.iam725.kunal.map_trial;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.RadioButton;
+import android.widget.TextView;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
@@ -27,8 +30,13 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
+import static com.iam725.kunal.map_trial.Login.email;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, LocationListener,
         GoogleApiClient.ConnectionCallbacks,
@@ -38,7 +46,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private static final long INTERVAL = 1000 * 10;             //time in milliseconds
     private static final long FASTEST_INTERVAL = 1000 * 5;
     private static final String REQUESTING_LOCATION_UPDATES_KEY = "requesting-location-updates";
-    //private final String USER = "user";
+    private final String USER = "user";
     private final String LATITUDE = "latitude";
     private final String LONGITUDE = "longitude";
     private final String VEHICLE = "vehicle";
@@ -52,6 +60,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private FusedLocationProviderClient mFusedLocationClient;
     private LocationCallback mLocationCallback;
     private Boolean mRequestingLocationUpdates;
+    TextView distance;
 
 
 
@@ -72,6 +81,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        distance = (TextView) findViewById(R.id.distance);
 
         mRequestingLocationUpdates = false;
 
@@ -109,12 +120,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         // Got last known location. In some rare situations this can be null.
                         if (location != null) {
                             mCurrentLocation = location;
+                            onMapReady(mMap);
                         }
                     }});
 
         if (null != mCurrentLocation) {
             String lat = String.valueOf(mCurrentLocation.getLatitude());
             String lng = String.valueOf(mCurrentLocation.getLongitude());
+            //onMapReady(mMap);
             mDatabase = FirebaseDatabase.getInstance().getReference();
             if (checkBusSelection != 0) {
                 String BUS = "b" + checkBusSelection;
@@ -123,12 +136,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 userDatabase.child(LONGITUDE).setValue(lng);
 
             }
-            mMap.addMarker(new MarkerOptions()
-                    .position(new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude()))
-                    .title("Marker in Sydney"));
-            mMap.animateCamera(CameraUpdateFactory.newLatLng(
-                    new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude())));
-
 
         } else {
             Log.d(TAG, "location is null ...............");
@@ -141,6 +148,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     // Update UI with location data
                     // ...
                     mCurrentLocation = location;
+                    //onMapReady(mMap);
                     if (null != mCurrentLocation) {
                         String lat = String.valueOf(mCurrentLocation.getLatitude());
                         String lng = String.valueOf(mCurrentLocation.getLongitude());
@@ -165,16 +173,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
-
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
@@ -208,11 +206,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         //mylocation = {10.802874, 76.820238}
         LatLng mylocation = new LatLng(mylatitiude, mylongitude);
         mMap.addMarker(new MarkerOptions().position(mylocation).title("MyLocation"));
-        mMap.animateCamera(CameraUpdateFactory.newLatLng(mylocation));
-        mMap.setMyLocationEnabled(true);*/
+        mMap.animateCamera(CameraUpdateFactory.newLatLng(mylocation));*/
+        mMap.setMyLocationEnabled(true);
+        if (null != mCurrentLocation) {
+
+            mMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude()))
+                    .title("MY LOCATION"));
+            mMap.animateCamera(CameraUpdateFactory.newLatLng(
+                    new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude())));
+
+        }
 
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     public void onRadioButtonClicked(View view) {
         // Is the button now checked?
         boolean checked = ((RadioButton) view).isChecked();
@@ -222,6 +230,22 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             case R.id.bus1:
                 if (checked) {
                     checkBusSelection = 1;
+                    LatLng bus1_location = new LatLng(getLatFromDatabase (checkBusSelection),
+                            getLngFromDatabase (checkBusSelection));
+                    LatLng myLocation = new LatLng(mCurrentLocation.getLatitude(),
+                            mCurrentLocation.getLongitude());
+                    double DIFFERENCE = CalculationByDistance(myLocation, bus1_location);
+                    String dist = String.valueOf(DIFFERENCE) + "Km";
+                    distance.setText(dist);
+                    /*//Getting both the coordinates
+        LatLng from = new LatLng(fromLatitude,fromLongitude);
+        LatLng to = new LatLng(toLatitude,toLongitude);
+
+        //Calculating the distance in meters
+        Double distance = SphericalUtil.computeDistanceBetween(from, to);
+
+        //Displaying the distance
+        Toast.makeText(this,String.valueOf(distance+" Meters"),Toast.LENGTH_SHORT).show();*/
                     break;
                 }
             case R.id.bus2:
@@ -245,6 +269,92 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     break;
                 }
         }
+    }
+
+    private double getLngFromDatabase(int checkBusSelection) {
+
+        /*Bundle extras = getIntent().getExtras();
+        String userId = extras.getString("email");*/
+        String userId = email;
+        assert userId != null;
+        //String[] temp = userId.split("@");
+        //userId = temp[0];
+        userId = "121601016";
+        final double[] lng = new double[1];
+
+        String BUS = "b" + checkBusSelection;
+        mDatabase = FirebaseDatabase.getInstance().getReference();
+        DatabaseReference userDatabase = mDatabase.child(USER).child(userId).child(BUS);
+        userDatabase.child(LONGITUDE).addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                String longitude = (String) dataSnapshot.getValue();
+                lng[0] = Double.parseDouble(longitude);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+        return lng[0];
+
+    }
+
+    private double getLatFromDatabase(int checkBusSelection) {
+
+        /*Bundle extras = getIntent().getExtras();
+        String userId = extras.getString("email");*/
+        String userId = email;
+        assert userId != null;
+        /*String[] temp = userId.split("@");
+        userId = temp[0];*/
+        userId = "121601016";
+        final double[] lat = new double[1];
+
+        String BUS = "b" + checkBusSelection;
+        mDatabase = FirebaseDatabase.getInstance().getReference();
+        DatabaseReference userDatabase = mDatabase.child(USER).child(userId).child(BUS);
+        userDatabase.child(LATITUDE).addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+               String latitude = (String) dataSnapshot.getValue();
+               lat[0] = Double.parseDouble(latitude);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+        return lat[0];
+
+
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    public double CalculationByDistance(LatLng StartP, LatLng EndP) {
+        int Radius = 6371;// radius of earth in Km
+        double lat1 = StartP.latitude;
+        double lat2 = EndP.latitude;
+        double lon1 = StartP.longitude;
+        double lon2 = EndP.longitude;
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1))
+                * Math.cos(Math.toRadians(lat2)) * Math.sin(dLon / 2)
+                * Math.sin(dLon / 2);
+        double c = 2 * Math.asin(Math.sqrt(a));
+        double valueResult = Radius * c;
+        /*double km = valueResult / 1;
+        DecimalFormat newFormat = new DecimalFormat("####");
+        int kmInDec = Integer.valueOf(newFormat.format(km));
+        double meter = valueResult % 1000;
+        int meterInDec = Integer.valueOf(newFormat.format(meter));
+        Log.i("Radius Value", "" + valueResult + "   KM  " + kmInDec
+                + " Meter   " + meterInDec);*/
+        return Radius * c;
     }
 
     public void pickMe(View view) {
