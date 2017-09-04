@@ -4,17 +4,13 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:orientation="vertical"
-        android:layout_weight="1">
 
     <RadioGroup xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
         android:layout_gravity="center_horizontal|end"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:layout_weight="1">
 
         <RadioButton
             android:id="@+id/bus1"
@@ -56,51 +52,93 @@
             android:onClick="onRadioButtonClicked"
             android:text="@string/Bus5" />
     </RadioGroup>
-    </LinearLayout>
-
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingBottom="5dp"
-        android:paddingTop="5dp"
-        android:paddingLeft="5dp"
-        android:paddingStart="5dp"
+        android:layout_height="35dp"
         android:orientation="horizontal"
-        android:baselineAligned="false"
-        tools:ignore="RtlSymmetry">
+        android:baselineAligned="false">
 
         <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_weight="1">
-
+            android:layout_weight="1"
+            >
+            <ImageView
+                android:layout_marginLeft="10dp"
+                android:layout_marginStart="10dp"
+                android:layout_marginTop="5dp"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:src="@drawable/ic_distance"/>
             <TextView
+                android:layout_marginLeft="5dp"
+                android:layout_marginStart="5dp"
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:id="@+id/distance"
-                android:text="@string/distance"
-                android:textSize="12sp"
-
-                />
-
+                android:layout_height="wrap_content"
+                android:padding="10dp"
+                android:text="@string/_0_km"
+                android:id="@+id/distance" />
         </LinearLayout>
 
         <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:layout_weight="1">
-
+            <ImageView
+                android:layout_marginLeft="10dp"
+                android:layout_marginStart="10dp"
+                android:layout_marginTop="5dp"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:src="@drawable/ic_clock"/>
             <TextView
+                android:layout_marginLeft="5dp"
+                android:layout_marginStart="5dp"
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:id="@+id/time"
-                android:text="@string/time"
-                android:textSize="12sp"
-                />
-
+                android:layout_height="wrap_content"
+                android:padding="10dp"
+                android:text="@string/_0_min"
+                android:id="@+id/time" />
         </LinearLayout>
+    </LinearLayout>
+
+
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/type" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="onNormalMap"
+            android:text="@string/normal" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="onSatelliteMap"
+            android:text="@string/satellite" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="onTerrainMap"
+            android:text="@string/terrain" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="onHybridMap"
+            android:text="@string/hybrid" />
 
     </LinearLayout>
 

@@ -1,6 +1,7 @@
 package com.iam725.kunal.map_trial;
 
 import android.content.pm.PackageManager;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.os.Build;
@@ -35,6 +36,9 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+
+import java.io.IOException;
+import java.util.List;
 
 import static com.iam725.kunal.map_trial.Login.email;
 
@@ -81,6 +85,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+        // Show Zoom buttons
+        mMap.getUiSettings().setZoomControlsEnabled(true);
+        // Turns traffic layer on
+        mMap.setTrafficEnabled(true);
+        // Enables indoor maps
+        mMap.setIndoorEnabled(true);
+
+        // Turns on 3D buildings
+        //mMap.setBuildingsEnabled(true);
 
         distance = (TextView) findViewById(R.id.distance);
 
@@ -104,14 +117,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .build();
 
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
+                    return;
         }
         mFusedLocationClient.getLastLocation()
                 .addOnSuccessListener(this, new OnSuccessListener<Location>() {
@@ -182,24 +188,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
         //mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            //return;
+
         }
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            //return;
+
         }
         /*double mylatitiude = mMap.getMyLocation().getLatitude();
         double mylongitude = mMap.getMyLocation().getLongitude();
@@ -208,11 +200,23 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.addMarker(new MarkerOptions().position(mylocation).title("MyLocation"));
         mMap.animateCamera(CameraUpdateFactory.newLatLng(mylocation));*/
         mMap.setMyLocationEnabled(true);
+        String str = "My Location";
         if (null != mCurrentLocation) {
+
+            Geocoder geocoder = new Geocoder(getApplicationContext());
+
+            try {
+                List<android.location.Address> addressList  =  geocoder.getFromLocation(mCurrentLocation.getLatitude(),
+                        mCurrentLocation.getLongitude(), 1);
+                str = addressList.get(0).getLocality() + ",";
+                str += addressList.get(0).getCountryName();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
             mMap.addMarker(new MarkerOptions()
                     .position(new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude()))
-                    .title("MY LOCATION"));
+                    .title(str));
             mMap.animateCamera(CameraUpdateFactory.newLatLng(
                     new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude())));
 
@@ -334,7 +338,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     public double CalculationByDistance(LatLng StartP, LatLng EndP) {
-        int Radius = 6371;// radius of earth in Km
+        /*int Radius = 6371;// radius of earth in Km
         double lat1 = StartP.latitude;
         double lat2 = EndP.latitude;
         double lon1 = StartP.longitude;
@@ -353,8 +357,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         double meter = valueResult % 1000;
         int meterInDec = Integer.valueOf(newFormat.format(meter));
         Log.i("Radius Value", "" + valueResult + "   KM  " + kmInDec
-                + " Meter   " + meterInDec);*/
-        return Radius * c;
+                + " Meter   " + meterInDec);
+        return Radius * c;*/
+        double distance = 0;
+        Location crntLocation = new Location("crntlocation");
+        crntLocation.setLatitude(StartP.latitude);
+        crntLocation.setLongitude(StartP.longitude);
+
+        Location newLocation = new Location("newlocation");
+        newLocation.setLatitude(EndP.latitude);
+        newLocation.setLongitude(EndP.longitude);
+
+        distance = crntLocation.distanceTo(newLocation) / 1000;      // in km
+        return distance;
     }
 
     public void pickMe(View view) {
@@ -499,5 +514,22 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 mRequestingLocationUpdates);
         // ...
         super.onSaveInstanceState(outState);
+    }
+
+    public void onNormalMap(View view) {
+        mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+    }
+
+    public void onSatelliteMap(View view) {
+        mMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
+    }
+
+    public void onTerrainMap(View view) {
+        mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
+    }
+
+    public void onHybridMap(View view) {
+        mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+
     }
 }
