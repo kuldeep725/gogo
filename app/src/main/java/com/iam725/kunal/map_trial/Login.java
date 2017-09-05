@@ -24,7 +24,7 @@ public class Login extends AppCompatActivity {
     private FirebaseAuth mAuth;
     private EditText emailEditText;
     private EditText passwordEditText;
-    static String email;
+    private String email;
     //private TextView mStatusTextView;
     //private TextView mDetailTextView;
 
