@@ -9,6 +9,6 @@ android:layout_height="match_parent">
     android:layout_height="wrap_content"
     android:layout_centerInParent="true"
     android:src="@drawable/gogo"
-    android:contentDescription="@string/spash_screen" />
+    android:contentDescription="@string/splash_screen" />
 
 </RelativeLayout>

@@ -17,9 +17,8 @@ public class Splash extends AppCompatActivity {
             @Override
             public void run() {
                 // Executed after timer is finished (Opens MainActivity)
-                Intent intent = new Intent(Splash.this, Login.class);
+                Intent intent = new Intent(Splash.this, MapsActivity.class);
                 startActivity(intent);
-
                 // Kills this Activity
                 finish();
             }

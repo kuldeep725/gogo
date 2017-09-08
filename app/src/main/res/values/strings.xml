@@ -18,7 +18,7 @@
     <string name="pick_me">PICK ME</string>
     <string name="distance">Distance : 0Km</string>
     <string name="time">Time : 0s</string>
-    <string name="spash_screen">SPASH SCREEN</string>
+    <string name="splash_screen">SPLASH SCREEN</string>
     <string name="normal">Normal</string>
     <string name="satellite">Satellite</string>
     <string name="type">Type:</string>
@@ -26,4 +26,9 @@
     <string name="hybrid">Hybrid</string>
     <string name="_0_km">0 km</string>
     <string name="_0_min">0 min</string>
+    <string name="log_out">Log Out</string>
+    <string name="logging_out">Logging Out</string>
+    <string name="google_direction_api_key">AIzaSyChXllnUaESuRZPDpSHtb3oyXgL1edHITg</string>
 </resources>
+    <!--AIzaSyAy7qBp08l_M_TKotXX3TZyV3RQ7LZYdLg-->
+    <!--AIzaSyCs3Ju_Y2iQOSfkVS34WaciT-U3KPUpLf0-->
