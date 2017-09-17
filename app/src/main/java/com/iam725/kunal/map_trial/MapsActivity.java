@@ -1,8 +1,10 @@
 package com.iam725.kunal.map_trial;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
@@ -15,11 +17,13 @@ import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -72,6 +76,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         private static final long INTERVAL = 1000 * 10;             //time in milliseconds
         private static final long FASTEST_INTERVAL = 1000 * 5;
         private static final String REQUESTING_LOCATION_UPDATES_KEY = "requesting-location-updates";
+        private static final String INTERMEDIATE = "intermediate" ;
         private final String USER = "user";
         private final String LATITUDE = "latitude";
         private final String LONGITUDE = "longitude";
@@ -82,6 +87,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         boolean isGPSEnabled = false;
         boolean isNetworkEnabled = false;
         boolean canGetLocation = false;
+        private String userId;
+        String BUS;
+        String key;
 
         protected GoogleMap mMap;
         protected DatabaseReference mDatabase;
@@ -144,6 +152,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 distance = (TextView) findViewById(R.id.distance);
                 duration = (TextView) findViewById(R.id.time);
+                mDatabase = FirebaseDatabase.getInstance().getReference();
 
                 // Find the toolbar view inside the activity layout
                 //Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -244,8 +253,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         if (checkBusSelection != 0) {
                                 String BUS = "b" + checkBusSelection;
                                 DatabaseReference userDatabase = mDatabase.child(VEHICLE).child(BUS);
-                                userDatabase.child(LATITUDE).setValue(lat);
-                                userDatabase.child(LONGITUDE).setValue(lng);
+                                Map<String, String> userData = new HashMap<>();
+                                userData.put(LATITUDE, lat);
+                                userData.put(LONGITUDE, lng);
+                                key = userDatabase.push().getKey();
+                                Map<String, Map<String, String>> mSendingData = new HashMap<>();
+                                mSendingData.put(key, userData);
+                                Map<String, Map<String, Map<String, String>>> mFinalData = new HashMap<>();
+                                mFinalData.put(INTERMEDIATE, mSendingData);
+                                userDatabase.setValue(mFinalData);
 
                         }
 
@@ -261,7 +277,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                         // ...
                                         mCurrentLocation = location;
                                         //onMapReady(mMap);
-                                        if (null != mCurrentLocation) {
+                                        /*if (null != mCurrentLocation) {
                                                 String lat = String.valueOf(mCurrentLocation.getLatitude());
                                                 String lng = String.valueOf(mCurrentLocation.getLongitude());
                                                 mDatabase = FirebaseDatabase.getInstance().getReference();
@@ -269,7 +285,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                                 if (checkBusSelection != 0) {
 
                                                         String BUS = "b" + checkBusSelection;
-                                                        DatabaseReference userDatabase = mDatabase.child(VEHICLE).child(BUS);
+                                                        DatabaseReference userDatabase = mDatabase.child(VEHICLE).child(BUS).child(userId);
                                                         userDatabase.child(LATITUDE).setValue(lat);
                                                         userDatabase.child(LONGITUDE).setValue(lng);
 
@@ -277,7 +293,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                                         } else {
                                                 Log.d(TAG, "My location is null ...............");
-                                        }
+                                        }*/
                                 }
                         }
 
@@ -414,6 +430,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 }
         }
 
+        @Override
+        public void onBackPressed() {
+                new AlertDialog.Builder(this)
+                        .setIcon(android.R.drawable.ic_dialog_alert)
+                        .setTitle("Closing Activity")
+                        .setMessage("Are you sure you want to close this activity?")
+                        .setPositiveButton("EXIT", new DialogInterface.OnClickListener()
+                        {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                        finish();
+                                }
+
+                        })
+                        .setNegativeButton("No", null)
+                        .show();
+        }
+
         private void makeMarkerOnTheLocation(final int checkBusSelection) {
 
                 String BUS = "b" + checkBusSelection;
@@ -431,6 +465,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                                 Log.d(TAG, "Data : " + dataSnapshot.getValue());
 
+                                assert map != null;
                                 String latitudeStr = map.get("latitude");
                                 String longitudeStr = map.get("longitude");
 
@@ -449,7 +484,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                                 List<android.location.Address> addressList = geocoder.getFromLocation(latitude, longitude, 1);
                                                 String str = addressList.get(0).getLocality() + ",";
                                                 str += addressList.get(0).getCountryName();
-                                                str += "(" + busName + ")";
+                                                str += " (" + busName + ")";
                                                 mMap.addMarker(new MarkerOptions()
                                                         .position(new LatLng(latitude, longitude))
                                                         .title(str))
@@ -592,13 +627,48 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 if (null != mCurrentLocation) {
                         String lat = String.valueOf(mCurrentLocation.getLatitude());
                         String lng = String.valueOf(mCurrentLocation.getLongitude());
-                        mDatabase = FirebaseDatabase.getInstance().getReference();
                         if (checkBusSelection != 0) {
-                                String BUS = "b" + checkBusSelection;
+                                BUS = "b" + checkBusSelection;
                                 DatabaseReference userDatabase = mDatabase.child(VEHICLE).child(BUS);
-                                userDatabase.child(LATITUDE).setValue(lat);
-                                userDatabase.child(LONGITUDE).setValue(lng);
+                                Map<String, String> userData = new HashMap<>();
+                                userData.put(LATITUDE, lat);
+                                userData.put(LONGITUDE, lng);
+                                key = userDatabase.push().getKey();
+                                Map<String, Map<String, String>> mSendingData = new HashMap<>();
+                                mSendingData.put("LOCATION", userData);
+                                /*Map<String, Map<String, Map<String, String>>> mFinalData = new HashMap<>();
+                                mFinalData.put(INTERMEDIATE, mSendingData);*/
+                                userDatabase.child(key).setValue(mSendingData);
+
                                 Toast.makeText(MapsActivity.this, "REQUEST SENT", Toast.LENGTH_LONG).show();
+                                Button button = (Button) findViewById(R.id.pick_me);
+                                button.setClickable(false);
+                                button.setBackgroundColor(Color.GREEN);
+
+                        }
+
+                } else {
+                        Log.d(TAG, "location is null ...............");
+                }
+
+        }
+
+        public void cancel(View view) {
+
+                if (null != mCurrentLocation) {
+
+                        String lat = String.valueOf(mCurrentLocation.getLatitude());
+                        String lng = String.valueOf(mCurrentLocation.getLongitude());
+                        if (checkBusSelection != 0) {
+                                //String BUS = "b" + checkBusSelection;
+                                DatabaseReference userDatabase = mDatabase.child(VEHICLE).child(BUS);
+                                //String key = userDatabase.push().getKey();
+
+                                userDatabase.child(key).removeValue();
+                                Toast.makeText(MapsActivity.this, "REQUEST ENDED", Toast.LENGTH_LONG).show();
+                                Button button = (Button) findViewById(R.id.pick_me);
+                                button.setClickable(true);
+                                button.setBackgroundColor(Color.BLUE);
 
                         }
 
@@ -652,6 +722,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         Intent i = new Intent(MapsActivity.this, Login.class);
                         startActivity(i);
                         finish();
+                }
+                else {
+                	 /*SharedPreferences myPrefs = this.getSharedPreferences("contact", MODE_WORLD_READABLE);
+                        userId = myPrefs.getString("email", "none");*/
+                	 userId = currentUser.getEmail();
                 }
                 Log.d(TAG, "onStart fired ..............");
                 mGoogleApiClient.connect();
@@ -831,7 +906,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 return data;
         }
 
-
         // Fetches data from url passed
         private class DownloadTask extends AsyncTask<String, Void, String> {
 
@@ -1002,106 +1076,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         // Drawing polyline in the Google Map for the i-th route
                         //mMap.addPolyline(lineOptions);
                 }
-        /*private class ParserTask extends AsyncTask<String, Integer, List<List<HashMap<String, String>>>> {
-
-                // Parsing the data in non-ui thread
-                @Override
-                protected List<List<HashMap<String, String>>> doInBackground(String... jsonData) {
-
-                        JSONObject jObject;
-                        List<List<HashMap<String, String>>> routes = null;
-
-                        try {
-                                jObject = new JSONObject(jsonData[0]);
-                                Log.d(TAG, "jsonData[0] = "+jsonData[0] );
-                                Log.d(TAG, "jObject.toString() = " + jObject.toString());
-                                DirectionsJSONParser parser = new DirectionsJSONParser();
-                                Log.d(TAG, "parser.toString() = " + parser.toString());
-                                Log.d(TAG, "SOMETHING IS HAPPENING");
-
-                                // Starts parsing data
-                                routes = parser.parse(jObject);
-                                Log.d(TAG, "Executing routes");
-                                Log.d(TAG, routes.toString());
-                                Log.d(TAG, "routes = " + routes);
-                        } catch (Exception e) {
-                                e.printStackTrace();
-                                Log.e(TAG, "JSONParser class didn't work properly");
-                        }
-                        return routes;
-                }
-
-                // Executes in UI thread, after the parsing process
-                @Override
-                protected void onPostExecute(List<List<HashMap<String, String>>> result) {
-
-                        ArrayList<LatLng> points = null;
-                        PolylineOptions lineOptions = null;
-                        MarkerOptions markerOptions = new MarkerOptions();
-                        String thedistance = "";
-                        String theduration = "";
-                        if (result != null) {
-                                Log.e(TAG, "result = " + result.size());
-
-                                try {
-                                        if (result.size() < 1) {
-                                                Toast.makeText(getBaseContext(), "No Points", Toast.LENGTH_SHORT).show();
-                                                return;
-                                        }
-                                } catch (Exception e) {
-                                        Log.e(TAG, "result.size()  is null.");
-                                }
-
-
-                                // Traversing through all the routes
-                                for (int i = 0; i < result.size(); i++) {
-                                        points = new ArrayList<LatLng>();
-                                        //ineOptions = new PolylineOptions();
-
-                                        // Fetching i-th route
-                                        List<HashMap<String, String>> path = result.get(i);
-
-                                        // Fetching all the points in i-th route
-                                        for (int j = 0; j < path.size(); j++) {
-                                                HashMap<String, String> point = path.get(j);
-
-                                                if (j == 0) {    // Get distance from the list
-                                                        thedistance = (String) point.get("distance");
-                                                        continue;
-                                                } else if (j == 1) { // Get duration from the list
-                                                        theduration = (String) point.get("duration");
-                                                        continue;
-                                                }
-
-                                                double lat = Double.parseDouble(point.get("lat"));
-                                                double lng = Double.parseDouble(point.get("lng"));
-                                                LatLng position = new LatLng(lat, lng);
-
-                                                points.add(position);
-                                        }
-                                        distance.setText(thedistance);
-                                        duration.setText(theduration);
-                                }
-                        }
-
-                        else {
-                                        Log.e(TAG, "result is null. result = " + result);
-                                }
-
-
-                                // Adding all the points in the route to LineOptions
-                                *//*lineOptions.addAll(points);
-                                lineOptions.width(2);
-                                lineOptions.color(Color.RED);*//*
-                        }
-
-
-
-                        //vDistanceDuration.setText("Distance:"+thedistance + ", Duration:"+theduration);
-
-                        // Drawing polyline in the Google Map for the i-th route
-                        //mMap.addPolyline(lineOptions);
-                }*/
+        
 
 }
 
